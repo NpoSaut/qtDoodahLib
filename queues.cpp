@@ -9,7 +9,7 @@ QueueContainerBase::QueueContainerBase()
     worker.start();
 }
 
-void QueueWorker::run()
+void QueueWorker::run(void)
 {
     container->run();
 }
@@ -23,13 +23,13 @@ QueueWorker::QueueWorker(QueueContainerBase *container, QObject *parent)
 
 template <typename T>
 SimpleQueueBase<T>::SimpleQueueBase() :
-    QThread(parent),
+    QueueContainerBase(),
     queueMutex(), queue()
 {
 }
 
 template <typename T>
-void SimpleQueueBase<T>::run()
+void SimpleQueueBase<T>::run(void)
 {
     while (true)
     {
@@ -63,6 +63,12 @@ QueueElementToken SimpleQueueBase<T>::enqueue(T element)
 
 
 // ---------------------------------------------------------------
+
+template <typename T>
+PriorityQueueBase<T>::PriorityQueueBase()
+    : SimpleQueueBase<T>()
+{
+}
 
 template <typename T>
 QueueElementToken PriorityQueueBase<T>::enqueue(T element)

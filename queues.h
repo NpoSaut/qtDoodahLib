@@ -17,9 +17,9 @@ namespace Queues
             QueueContainerBase *container;
 
         protected:
+            void run(void);
 
         public:
-            void run();
             explicit QueueWorker(QueueContainerBase *container, QObject *parent = 0);
     };
 
@@ -28,7 +28,7 @@ namespace Queues
     {
         public:
             QueueContainerBase();
-            virtual void run() = 0;     // TODO: плохо-плохо, что он так публичен!!
+            virtual void run(void) = 0;     // TODO: плохо-плохо, что он так публичен!!
 
         protected:
 
@@ -38,46 +38,35 @@ namespace Queues
 
     // Простая очередь
     template <typename T>
-    class SimpleQueueBase : QueueContainerBase
+    class SimpleQueueBase : public QueueContainerBase
     {
         public:
             SimpleQueueBase();
-
-        signals:
-
-        public slots:
+            virtual void run(void);
 
         protected:
+            QList<T> queue;
             QMutex queueMutex;
-            void run();
             virtual void process(T element) = 0;
             virtual QueueElementToken enqueue(T element);
 
         private:
-            QList<T> queue;
 
     };
 
 
     // Очередь с приоритетом
     template <typename T>
-    class PriorityQueueBase : SimpleQueueBase<T>
+    class PriorityQueueBase : public SimpleQueueBase<T>
     {
-            //Q_OBJECT
         public:
-            explicit PriorityQueueBase(QObject *parent = 0);
-
-        signals:
-
-        public slots:
+            PriorityQueueBase();
 
         protected:
             // Сравнивает приоритеты элементов.
             // Выдаёт >0, если приоритет первого аргумента больше, чем у второго. 0, если они равны и <0 во всех остальных случаях.
             virtual int compare(T a, T b) = 0;
-            QueueElementToken enqueue(T element);
-
-        private:
+            virtual QueueElementToken enqueue(T element);
     };
 
 
