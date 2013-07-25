@@ -8,14 +8,40 @@
 namespace Queues
 {
     class QueueElementToken;
+    class QueueContainerBase;
+
+    class QueueWorker : public QThread
+    {
+        Q_OBJECT
+        private:
+            QueueContainerBase *container;
+
+        protected:
+
+        public:
+            void run();
+            explicit QueueWorker(QueueContainerBase *container, QObject *parent = 0);
+    };
+
+    // Базовый класс для всех очередей
+    class QueueContainerBase
+    {
+        public:
+            QueueContainerBase();
+            virtual void run() = 0;     // TODO: плохо-плохо, что он так публичен!!
+
+        protected:
+
+        private:
+            QueueWorker worker;
+    };
 
     // Простая очередь
     template <typename T>
-    class SimpleQueueBase : public QThread
+    class SimpleQueueBase : QueueContainerBase
     {
-            //Q_OBJECT
         public:
-            explicit SimpleQueueBase(QObject *parent = 0);
+            SimpleQueueBase();
 
         signals:
 

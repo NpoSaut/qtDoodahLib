@@ -2,8 +2,27 @@
 
 using namespace Queues;
 
+
+QueueContainerBase::QueueContainerBase()
+    : worker(this)
+{
+    worker.start();
+}
+
+void QueueWorker::run()
+{
+    container->run();
+}
+
+QueueWorker::QueueWorker(QueueContainerBase *container, QObject *parent)
+    : QThread(parent), container(container)
+{
+}
+
+// ---------------------------------------------------------------
+
 template <typename T>
-SimpleQueueBase<T>::SimpleQueueBase(QObject *parent) :
+SimpleQueueBase<T>::SimpleQueueBase() :
     QThread(parent),
     queueMutex(), queue()
 {
@@ -60,3 +79,5 @@ QueueElementToken PriorityQueueBase<T>::enqueue(T element)
     }
     speachMutex.unlock();
 }
+
+
