@@ -7,7 +7,13 @@
 
 namespace Queues
 {
-    class QueueElementToken;
+//    class QueueElementToken;
+    // Токен постановки в очередь
+    class QueueElementToken
+    {
+    public:
+        int a;
+    };
     class QueueContainerBase;
 
     class QueueWorker : public QThread
@@ -54,7 +60,6 @@ namespace Queues
 
     };
 
-
     // Очередь с приоритетом
     template <typename T>
     class PriorityQueueBase : public SimpleQueueBase<T>
@@ -70,11 +75,7 @@ namespace Queues
     };
 
 
-    // Токен постановки в очередь
-    class QueueElementToken
-    {
 
-    };
 }
 
 #endif // QUEUES_H

@@ -52,13 +52,13 @@ void SimpleQueueBase<T>::run(void)
 template <typename T>
 QueueElementToken SimpleQueueBase<T>::enqueue(T element)
 {
-    speachMutex.lock();
+    queueMutex.lock();
     if (queue != nullptr)
     {
         queue->append(element);
-        return QueueElementToken();
     }
-    speachMutex.unlock();
+    queueMutex.unlock();
+    return QueueElementToken();
 }
 
 
@@ -73,17 +73,18 @@ PriorityQueueBase<T>::PriorityQueueBase()
 template <typename T>
 QueueElementToken PriorityQueueBase<T>::enqueue(T element)
 {
-    speachMutex.lock();
-    if (queue != nullptr)
+    this->queueMutex.lock();
+    if (this->queue != nullptr)
     {
         int i = 0;
-        foreach (e, queue) {
+        foreach (T e, this->queue) {
             if (compare(element, e) > 0) break;
             i++;
         }
-        queue.insert(i, element);
+        this->queue.insert(i, element);
     }
-    speachMutex.unlock();
+    this->queueMutex.unlock();
+    return QueueElementToken();
 }
 
 
