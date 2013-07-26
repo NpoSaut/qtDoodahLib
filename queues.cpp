@@ -2,12 +2,7 @@
 
 using namespace Queues;
 
-
-QueueContainerBase::QueueContainerBase()
-    : worker(this)
-{
-    worker.start();
-}
+// ------------------------- QueueWorker ----------------------------
 
 void QueueWorker::run(void)
 {
@@ -19,50 +14,51 @@ QueueWorker::QueueWorker(QueueContainerBase *container, QObject *parent)
 {
 }
 
-// ---------------------------------------------------------------
+// ---------------------- QueueContainerBase ------------------------
 
-template <typename T>
-SimpleQueueBase<T>::SimpleQueueBase() :
-    QueueContainerBase(),
-    queueMutex(), queue()
+QueueContainerBase::QueueContainerBase()
+    : worker(this)
 {
+    worker.start();
 }
 
-template <typename T>
-void SimpleQueueBase<T>::run(void)
-{
-    while (true)
-    {
-        queueMutex.lock();
-        int qsize = queue->size ();
-        queueMutex.unlock();
+// ----------------------- SimpleQueueBase --------------------------
 
-        if (qsize > 0)
-        {
-            queueMutex.lock();
-            T element = queue->at(0);
-            queue->remove(0);
-            queueMutex.unlock();
+//template<typename T>
+//SimpleQueueBase<T>::SimpleQueueBase ()
+//    : QueueContainerBase(),
+//      queueMutex(), queue()
+//{ }
 
-            process(element);
-        }
-    }
-}
+//template <typename T>
+//void SimpleQueueBase<T>::run()
+//{
+//    while (true)
+//    {
+//        queueMutex.lock();
+//            T element;
+//            bool nonempty = !queue.isEmpty ();
+//            if ( nonempty )
+//                element = queue.takeFirst ();
+//        queueMutex.unlock();
 
-template <typename T>
-QueueElementToken SimpleQueueBase<T>::enqueue(T element)
-{
-    queueMutex.lock();
-    if (queue != nullptr)
-    {
-        queue->append(element);
-    }
-    queueMutex.unlock();
-    return QueueElementToken();
-}
+//        if (nonempty)
+//            process(element);
+//    }
+//}
+
+//template <typename T>
+//QueueElementToken SimpleQueueBase<T>::enqueue(T element)
+//{
+//    queueMutex.lock();
+//        queue.append(element);
+//    queueMutex.unlock();
+
+//    return QueueElementToken();
+//}
 
 
-// ---------------------------------------------------------------
+// ----------------------- PriorityQueueBase ------------------------
 
 template <typename T>
 PriorityQueueBase<T>::PriorityQueueBase()
@@ -86,5 +82,4 @@ QueueElementToken PriorityQueueBase<T>::enqueue(T element)
     this->queueMutex.unlock();
     return QueueElementToken();
 }
-
 

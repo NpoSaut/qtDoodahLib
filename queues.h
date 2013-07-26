@@ -7,26 +7,22 @@
 
 namespace Queues
 {
-//    class QueueElementToken;
     // Токен постановки в очередь
     class QueueElementToken
-    {
-    public:
-        int a;
-    };
+    { };
     class QueueContainerBase;
 
     class QueueWorker : public QThread
     {
         Q_OBJECT
-        private:
-            QueueContainerBase *container;
+        public:
+            explicit QueueWorker(QueueContainerBase *container, QObject *parent = 0);
 
         protected:
             void run(void);
 
-        public:
-            explicit QueueWorker(QueueContainerBase *container, QObject *parent = 0);
+        private:
+            QueueContainerBase *container;
     };
 
     // Базовый класс для всех очередей
@@ -47,14 +43,39 @@ namespace Queues
     class SimpleQueueBase : public QueueContainerBase
     {
         public:
-            SimpleQueueBase();
-            virtual void run(void);
+            SimpleQueueBase()
+                : QueueContainerBase(),
+                  queueMutex(), queue()
+            { }
+
+            virtual void run()
+            {
+                while (true)
+                {
+                    queueMutex.lock();
+                        T element;
+                        bool nonempty = !queue.isEmpty ();
+                        if ( nonempty )
+                            element = queue.takeFirst ();
+                    queueMutex.unlock();
+
+                    if (nonempty)
+                        process(element);
+                }
+            }
 
         protected:
             QList<T> queue;
             QMutex queueMutex;
             virtual void process(T element) = 0;
-            virtual QueueElementToken enqueue(T element);
+            virtual QueueElementToken enqueue(T element)
+            {
+                queueMutex.lock();
+                    queue.append(element);
+                queueMutex.unlock();
+
+                return QueueElementToken();
+            }
 
         private:
 
@@ -73,8 +94,6 @@ namespace Queues
             virtual int compare(T a, T b) = 0;
             virtual QueueElementToken enqueue(T element);
     };
-
-
 
 }
 
