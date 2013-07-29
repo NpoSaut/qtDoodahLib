@@ -1,6 +1,7 @@
 #ifndef QUEUES_H
 #define QUEUES_H
 
+#include <QDebug>
 #include <QThread>
 #include <QList>
 #include <QMutex>
@@ -72,6 +73,7 @@ namespace Queues
             {
                 queueMutex.lock();
                     queue.append(element);
+                    qDebug() << "enq";
                 queueMutex.unlock();
 
                 return QueueElementToken();
@@ -86,13 +88,26 @@ namespace Queues
     class PriorityQueueBase : public SimpleQueueBase<T>
     {
         public:
-            PriorityQueueBase();
+            PriorityQueueBase()
+                : SimpleQueueBase<T>()
+            { }
 
         protected:
             // Сравнивает приоритеты элементов.
             // Выдаёт >0, если приоритет первого аргумента больше, чем у второго. 0, если они равны и <0 во всех остальных случаях.
             virtual int compare(T a, T b) = 0;
-            virtual QueueElementToken enqueue(T element);
+            virtual QueueElementToken enqueue(T element)
+            {
+                this->queueMutex.lock();
+                    int i = 0;
+                    foreach (T e, this->queue) {
+                        if (compare(element, e) > 0) break;
+                        i++;
+                    }
+                    this->queue.insert(i, element);
+                this->queueMutex.unlock();
+                return QueueElementToken();
+            }
     };
 
 }
