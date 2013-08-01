@@ -9,14 +9,14 @@ void QueueWorker::run(void)
     container->run();
 }
 
-QueueWorker::QueueWorker(QueueContainerBase *container, QObject *parent)
+QueueWorker::QueueWorker(QueueWorkerBase *container, QObject *parent)
     : QThread(parent), container(container)
 {
 }
 
 // ---------------------- QueueContainerBase ------------------------
 
-QueueContainerBase::QueueContainerBase()
+QueueWorkerBase::QueueWorkerBase()
     : worker(this)
 {
     worker.start();
