@@ -81,6 +81,15 @@ namespace Queues
                 return QueueElementToken();
             }
 
+            bool isEmpty()
+            {
+                bool res;
+                queueMutex.lock();
+                    res = queue.empty ();
+                queueMutex.unlock();
+                return res;
+            }
+
         private:
             virtual void run()
             {
