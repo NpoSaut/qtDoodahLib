@@ -6,7 +6,11 @@ using namespace Queues;
 
 void QueueWorker::run(void)
 {
-    container->run();
+    while (true)
+    {
+        container->peek();
+        usleep (0);
+    }
 }
 
 QueueWorker::QueueWorker(QueueWorkerBase *container, QObject *parent)

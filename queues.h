@@ -37,7 +37,7 @@ namespace Queues
 
         protected:
             // Вызвается в отдельном потоке
-            virtual void run() = 0;
+            virtual void peek() = 0;
 
         private:
             // Поток, вызывающий функцию run()
@@ -91,10 +91,8 @@ namespace Queues
             }
 
         private:
-            virtual void run()
+            virtual void peek()
             {
-                while (true)
-                {
                     queueMutex.lock();
                         T element;
                         bool nonempty = !queue.isEmpty ();
@@ -104,7 +102,6 @@ namespace Queues
 
                     if (nonempty)
                         process(element);
-                }
             }
 
     };
