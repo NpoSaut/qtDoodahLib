@@ -5,6 +5,7 @@
 #include <QThread>
 #include <QList>
 #include <QMutex>
+#include <QWaitCondition>
 
 namespace Queues
 {
@@ -57,15 +58,17 @@ namespace Queues
     class SimpleQueueBase : private QueueWorkerBase
     {
         public:
-            SimpleQueueBase()
+            SimpleQueueBase(quint32 maxSize = 100000)
                 : QueueWorkerBase(),
-                  queueMutex(), queue()
+                  maxSize (maxSize), queue(), mutex(), notEmpty(), notFull()
             { }
 
 
         protected:
+            const quint32 maxSize;
             QList<T> queue;
-            QMutex queueMutex;
+            QMutex mutex;
+            QWaitCondition notEmpty, notFull;
 
             // Выполняет действие над элементом, изъятым из очереди
             virtual void process(T element) = 0;
@@ -73,10 +76,15 @@ namespace Queues
             // Ставит элемент в очередь
             virtual QueueElementToken enqueue(T element)
             {
-                queueMutex.lock();
+                mutex.lock();
+                {
+                    if ( queue.size () == maxSize )
+                        notFull.wait (&mutex);
+
                     queue.append(element);
-                    qDebug() << "enq";
-                queueMutex.unlock();
+                    notEmpty.wakeAll ();
+                }
+                mutex.unlock();
 
                 return QueueElementToken();
             }
@@ -84,24 +92,28 @@ namespace Queues
             bool isEmpty()
             {
                 bool res;
-                queueMutex.lock();
+                mutex.lock();
                     res = queue.empty ();
-                queueMutex.unlock();
+                mutex.unlock();
                 return res;
             }
 
         private:
+            // Извлекает элемент из очереди (в отдельном потоке)
             virtual void peek()
             {
-                    queueMutex.lock();
-                        T element;
-                        bool nonempty = !queue.isEmpty ();
-                        if ( nonempty )
-                            element = queue.takeFirst ();
-                    queueMutex.unlock();
+                T element;
+                mutex.lock();
+                {
+                    if ( queue.isEmpty () )
+                        notEmpty.wait (&mutex);
 
-                    if (nonempty)
-                        process(element);
+                    element = queue.takeFirst ();
+                    notFull.wakeAll ();
+                }
+                mutex.unlock();
+
+                process(element);
             }
 
     };
@@ -135,14 +147,22 @@ namespace Queues
             //  Элемент ставится вслед за элементом с приоритетом равным или большим
             virtual QueueElementToken enqueue(T element)
             {
-                this->queueMutex.lock();
+                this->mutex.lock();
+                {
+                    if ( this->queue.size () == this->maxSize )
+                        this->notFull.wait (&(this->mutex));
+
                     int i = 0;
-                    foreach (T e, this->queue) {
+                    foreach (T e, this->queue)
+                    {
                         if (compare(element, e) > 0) break;
                         i++;
                     }
                     this->queue.insert(i, element);
-                this->queueMutex.unlock();
+
+                    this->notEmpty.wakeAll ();
+                }
+                this->mutex.unlock();
                 return QueueElementToken();
             }
     };
