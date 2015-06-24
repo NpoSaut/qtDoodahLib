@@ -7,6 +7,8 @@
 #include <QMutex>
 #include <QWaitCondition>
 
+#include "queues/PriorityThreadSafeQueue.h"
+
 namespace Queues
 {
     // Токен постановки в очередь
@@ -59,63 +61,34 @@ namespace Queues
     {
         public:
             SimpleQueueBase(quint32 maxSize = 100000)
-                : QueueWorkerBase(),
-                  maxSize (maxSize), queue(), mutex(), notEmpty(), notFull()
+                : QueueWorkerBase(), queue(maxSize)
             { }
 
 
         protected:
-            const quint32 maxSize;
-            QList<T> queue;
-            QMutex mutex;
-            QWaitCondition notEmpty, notFull;
-
             // Выполняет действие над элементом, изъятым из очереди
             virtual void process(T element) = 0;
 
             // Ставит элемент в очередь
             virtual QueueElementToken enqueue(T element)
             {
-                mutex.lock();
-                {
-                    if ( queue.size () == maxSize )
-                        notFull.wait (&mutex);
-
-                    queue.append(element);
-                    notEmpty.wakeAll ();
-                }
-                mutex.unlock();
-
+                queue.enqueue(element);
                 return QueueElementToken();
             }
 
             bool isEmpty()
             {
-                bool res;
-                mutex.lock();
-                    res = queue.empty ();
-                mutex.unlock();
-                return res;
+                queue.isEmpty();
             }
 
         private:
             // Извлекает элемент из очереди (в отдельном потоке)
             virtual void peek()
             {
-                T element;
-                mutex.lock();
-                {
-                    if ( queue.isEmpty () )
-                        notEmpty.wait (&mutex);
-
-                    element = queue.takeFirst ();
-                    notFull.wakeAll ();
-                }
-                mutex.unlock();
-
-                process(element);
+                process(queue.dequeue());
             }
 
+            LinerThreadSafeQueue<T> queue;
     };
 
     // Очередь с приоритетом, достающая элементы в отдельном потоке
@@ -126,11 +99,11 @@ namespace Queues
     //  который производит с элементом действие по изъятии его из очереди.
     //  enqueue ставит элемент в очередь.
     template <typename T>
-    class PriorityQueueBase : public SimpleQueueBase<T>
+    class PriorityQueueBase : private QueueWorkerBase
     {
         public:
-            PriorityQueueBase()
-                : SimpleQueueBase<T>()
+            PriorityQueueBase(quint32 maxSize = 100000)
+                : QueueWorkerBase(), queue(maxSize, this)
             { }
 
         protected:
@@ -144,27 +117,40 @@ namespace Queues
             virtual void process(T element) = 0;
 
             // Ставит элемент в очередь
-            //  Элемент ставится вслед за элементом с приоритетом равным или большим
             virtual QueueElementToken enqueue(T element)
             {
-                this->mutex.lock();
-                {
-                    if ( this->queue.size () == this->maxSize )
-                        this->notFull.wait (&(this->mutex));
-
-                    int i = 0;
-                    foreach (T e, this->queue)
-                    {
-                        if (compare(element, e) > 0) break;
-                        i++;
-                    }
-                    this->queue.insert(i, element);
-
-                    this->notEmpty.wakeAll ();
-                }
-                this->mutex.unlock();
+                queue.enqueue(element);
                 return QueueElementToken();
             }
+
+            bool isEmpty()
+            {
+                queue.isEmpty();
+            }
+
+        private:
+            // Извлекает элемент из очереди (в отдельном потоке)
+            virtual void peek()
+            {
+                process(queue.dequeue());
+            }
+
+            class MyPriorityThreadSafeQueue : public PriorityThreadSafeQueue<T>
+            {
+            public:
+                MyPriorityThreadSafeQueue(unsigned maxSize, PriorityQueueBase<T> *parent)
+                    : PriorityThreadSafeQueue<T> (maxSize), parent (parent)
+                { }
+
+            private:
+                PriorityQueueBase<T> *parent;
+                int compare (T a, T b)
+                {
+                    return parent->compare(a, b);
+                }
+            };
+            MyPriorityThreadSafeQueue queue;
+
     };
 
 }
