@@ -8,7 +8,7 @@ class PriorityThreadSafeQueue : public LinerThreadSafeQueue<T>
 {
 public:
     PriorityThreadSafeQueue(unsigned maxSize)
-        : LinerThreadSafeQueue(maxSize)
+        : LinerThreadSafeQueue<T>(maxSize)
     { }
 
     virtual void enqueue (const T &t)
@@ -24,7 +24,7 @@ public:
                 if (compare(t, e) > 0) break;
                 i++;
             }
-            this->queue.insert(i, element);
+            this->queue.insert(i, t);
 
             this->notEmpty.wakeAll ();
         }

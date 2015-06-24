@@ -45,35 +45,20 @@ public:
 
     virtual T &head ()
     {
-        T &element;
+        T *element;
         mutex.lock();
         {
             if ( queue.isEmpty () )
                 notEmpty.wait (&mutex);
 
-            element = queue.first ();
+            element = &queue.first ();
             notFull.wakeAll ();
         }
         mutex.unlock();
-        return element;
+        return *element;
     }
 
-    virtual const T &head () const
-    {
-        const T &element;
-        mutex.lock();
-        {
-            if ( queue.isEmpty () )
-                notEmpty.wait (&mutex);
-
-            element = queue.first ();
-            notFull.wakeAll ();
-        }
-        mutex.unlock();
-        return element;
-    }
-
-    virtual bool isEmpty () const
+    virtual bool isEmpty ()
     {
         bool res;
         mutex.lock();
