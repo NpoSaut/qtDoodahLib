@@ -11,10 +11,6 @@ class ThreadWithWorker : public QThread
 public:
     explicit ThreadWithWorker(IThreadWorker *worker, QObject *parent = 0);
     IThreadWorker *worker;
-
-protected slots:
-    virtual void run ();
-
 };
 
 #endif // THREADWITHWORKER_H
