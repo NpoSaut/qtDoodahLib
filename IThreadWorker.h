@@ -8,7 +8,7 @@ class IThreadWorker : public QObject
 {
     Q_OBJECT
 public:
-    explicit IThreadWorker(QObject *parent = 0);
+    explicit IThreadWorker();
 
 public slots:
     virtual void run () = 0;
